@@ -20,9 +20,11 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 # Declare any run-time dependencies that should be installed with the package.
-#dependencies = [
-#    "importlib-resources;python_version<'3.10'",
-#]
+dependencies = [
+    "importlib-resources;python_version<'3.10'",
+    "numpy",
+    "pymdi"
+]
 
 # Update the urls once the hosting is set up.
 #[project.urls]
@@ -59,6 +61,7 @@ include-package-data = false
 namespaces = false
 where = ["."]
 
+
 # Ref https://setuptools.pypa.io/en/latest/userguide/datafiles.html#package-data
 [tool.setuptools.package-data]
 mdi_rexmd = [
@@ -82,3 +85,9 @@ default-tag = "1.0.0"
 
 [tool.versioningit.write]
 file = "mdi_rexmd/_version.py"
+
+
+[project.scripts]
+mdi_rexmd = "mdi_rexmd.driver:main"
+setup_repex = "mdi_rexmd.scripts.setup_tinker_repex:main"
+
