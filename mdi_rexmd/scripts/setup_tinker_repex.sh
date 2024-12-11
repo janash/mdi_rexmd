@@ -6,12 +6,15 @@ if [ "$#" -ne 1 ]; then
     echo "Please provide a config file with:"
     echo "  temperatures=300,305,308,312"
     echo "  n_steps=100000"
-    echo "  interval=1000"
+    echo "  exchange_interval=1000"
     echo "  engine_image=/path/to/engine.sif"
     echo "  driver_image=/path/to/driver.sif"
     echo "  tinker_key=/path/to/tinker.key"
     echo "  tinker_xyz=/path/to/tinker.xyz"
     echo "  tinker_prm=/path/to/amoebabio18.prm"
+    echo "  timestep=1.0"
+    echo "  save_interval=1"
+    echo "  ensemble=4"
     echo "  [Optional] equil=1000"
     exit 1
 fi
@@ -31,7 +34,7 @@ if ! source <(grep = "$config_file" | sed 's/ *= */=/g'); then
 fi
 
 # Check for required files and variables
-required_vars=("tinker_key" "tinker_xyz" "tinker_prm")
+required_vars=("tinker_key" "tinker_xyz" "tinker_prm" "temperatures" "n_steps" "exchange_interval" "engine_image" "driver_image" "timestep" "save_interval" "ensemble")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "Error: Required configuration variable '$var' is missing or empty in '$config_file'."
@@ -71,7 +74,7 @@ export PATH=/opt/venv/bin:$PATH
 EOF
 
 cat << EOF >> "launch_driver.sh"
-mdi_rexmd -nsteps $n_steps -interval $interval -output_dir remd_analysis -mdi "-role DRIVER -name driver -method MPI"
+mdi_rexmd -nsteps $n_steps -interval $exchange_interval -output_dir remd_analysis -mdi "-role DRIVER -name driver -method MPI"
 EOF
 
 chmod +x launch_driver.sh
@@ -89,7 +92,7 @@ cp $tinker_key tinker_${temp}/tinker.key
 cp $tinker_prm tinker_${temp}/
 cd tinker_${temp}
 
-/repo/build/tinker9/build/tinker9 dynamic tinker.xyz $equil 1.0 0.1 4 $temp 1.0 -k tinker.key > tinker_${temp}_equil.log
+/repo/build/tinker9/build/tinker9 dynamic tinker.xyz $equil $timestep $save_interval $ensemble $temp 1.0 -k tinker.key > tinker_${temp}_equil.log
 sleep 1
 EOF
         chmod +x "$equil_script"
@@ -111,7 +114,7 @@ EOF
         cat << EOF > "$repex_script"
 #!/bin/bash
 cd tinker_${temp}
-/repo/build/tinker9/build/tinker9 dynamic tinker.xyz $n_steps 1.0 0.1 4 $temp 1.0 -k tinker.key -mdi "-name TINKER_${temp} -role ENGINE -method MPI" > tinker_${temp}.log
+/repo/build/tinker9/build/tinker9 dynamic tinker.xyz $n_steps $timestep $save_interval $ensemble $temp 1.0 -k tinker.key -mdi "-name TINKER_${temp} -role ENGINE -method MPI" > tinker_${temp}.log
 EOF
         chmod +x "$repex_script"
 
